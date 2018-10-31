@@ -5331,7 +5331,7 @@ int ntfs_get_group(struct SECURITY_API *scapi, const SID *gsid)
  */
 
 struct SECURITY_API *ntfs_initialize_file_security(const char *device,
-				unsigned long flags)
+				unsigned long flags, BOOL force)
 {
 	ntfs_volume *vol;
 	unsigned long mntflag;
@@ -5341,7 +5341,7 @@ struct SECURITY_API *ntfs_initialize_file_security(const char *device,
 
 	scapi = (struct SECURITY_API*)NULL;
 	mnt = ntfs_check_if_mounted(device, &mntflag);
-	if (!mnt && !(mntflag & NTFS_MF_MOUNTED) && !getuid()) {
+	if (force || (!mnt && !(mntflag & NTFS_MF_MOUNTED) && !getuid())) {
 		vol = ntfs_mount(device, flags);
 		if (vol) {
 			scapi = (struct SECURITY_API*)

@@ -545,6 +545,7 @@ static const SID *systemsid = (const SID*)systemsidbytes;
 BOOL opt_e;	/* restore extra (currently windows attribs) */
 BOOL opt_r;	/* recursively apply to subdirectories */
 BOOL opt_u;	/* user mapping proposal */
+BOOL opt_force;	/* force mount */
 int opt_v;  /* verbose or very verbose*/
 CMDS cmd; /* command to process */
 struct SECURITY_DATA *securdata[(MAXSECURID + (1 << SECBLKSZ) - 1)/(1 << SECBLKSZ)];
@@ -580,7 +581,7 @@ static BOOL open_volume(const char *volume, unsigned long flags)
 
 	ok = FALSE;
 	if (!ntfs_context) {
-		ntfs_context = ntfs_initialize_file_security(volume, flags);
+		ntfs_context = ntfs_initialize_file_security(volume, flags, opt_force);
 		if (ntfs_context) {
 			if (*(u32*)ntfs_context != MAGIC_API) {
 				fprintf(stderr,"Versions of ntfs-3g and ntfssecaudit"
@@ -818,7 +819,7 @@ static unsigned int utf8size(const ntfschar *utf16, int length)
 			if ((c >= 0xdc00) && (c < 0xe000)) {
 				surrog = FALSE;
 				count += 4;
-			} else 
+			} else
 				fail = TRUE;
 		} else
 			if (c < 0x80)
@@ -835,10 +836,10 @@ static unsigned int utf8size(const ntfschar *utf16, int length)
 			else if (c >= 0xe000)
 #endif
 				count += 3;
-			else 
+			else
 				fail = TRUE;
 	}
-	if (surrog) 
+	if (surrog)
 		fail = TRUE;
 
 	return (fail ? 0 : count);
@@ -6024,7 +6025,7 @@ static void usage(void)
 #else /* defined(__sun) && defined (__SVR4) */
 	fprintf(stderr,"          volume is a partition designator (eg. /dev/sdb2)\n");
 #endif /* defined(__sun) && defined (__SVR4) */
-	fprintf(stderr,"          -v is for verbose, -vv for very verbose\n");
+	fprintf(stderr,"          -v is for verbose, -vv for very verbose, -f for force\n");
 #endif /* HAVE_WINDOWS_H */
 }
 
@@ -6123,7 +6124,7 @@ static BOOL splitarg(char **split, const char *arg)
 
 static int parse_options(int argc, char *argv[])
 {
-	static const char *sopt = "-abehHrstuvV";
+	static const char *sopt = "-abefhHrstuvV";
 	static const struct option lopt[] = {
 		{ "audit",	 no_argument,		NULL, 'a' },
 		{ "backup",	 no_argument,		NULL, 'b' },
@@ -6136,6 +6137,7 @@ static int parse_options(int argc, char *argv[])
 		{ "user-mapping",no_argument,		NULL, 'u' },
 		{ "verbose",	 no_argument,		NULL, 'v' },
 		{ "version",	 no_argument,		NULL, 'V' },
+		{ "force",	 no_argument,		NULL, 'f' },
 		{ NULL,		 0,			NULL,  0  }
 	};
 
@@ -6150,6 +6152,7 @@ static int parse_options(int argc, char *argv[])
 
 	opt_e = FALSE;
 	opt_r = FALSE;
+	opt_force = FALSE;
 	opt_v = 0;
 	cmd = CMD_NONE;
 	prevcmd = CMD_NONE;
@@ -6200,6 +6203,9 @@ static int parse_options(int argc, char *argv[])
 			break;
 		case 'V':
 			ver++;
+			break;
+		case 'f':
+			opt_force = TRUE;
 			break;
 		default:
 			if ((c < 'a') || (c > 'z'))
@@ -6322,7 +6328,7 @@ int main(int argc, char *argv[])
 			case 2 :
 #ifdef HAVE_WINDOWS_H
 				if (!splitarg(split, argv[xarg + 1]))
-					fail = setperms(split[0], 
+					fail = setperms(split[0],
 							argv[xarg], split[1]);
 				else
 					cmderr = TRUE;

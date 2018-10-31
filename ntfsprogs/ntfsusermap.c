@@ -213,7 +213,7 @@ static boolean open_volume(const char *volume)
 	ok = DENIED;
 	if (!ntfs_context) {
 		ntfs_context = ntfs_initialize_file_security(volume,
-						NTFS_MNT_RDONLY);
+						NTFS_MNT_RDONLY,FALSE);
 		if (ntfs_context) {
 			fprintf(stderr,"\"%s\" opened\n",volume);
 			ok = AGREED;
